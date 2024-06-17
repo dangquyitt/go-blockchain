@@ -57,30 +57,30 @@ func (b *Block) MarshalJSON() ([]byte, error) {
 	})
 }
 
-type BlockChain struct {
+type Blockchain struct {
 	transactionPool []*Transaction
 	chain           []*Block
 }
 
-func NewBlockChain() *BlockChain {
+func NewBlockchain() *Blockchain {
 	b := &Block{}
-	bc := new(BlockChain)
+	bc := new(Blockchain)
 	bc.CreateBlock(0, b.Hash())
 	return bc
 }
 
-func (bc *BlockChain) CreateBlock(nonce int, previousHash [32]byte) *Block {
+func (bc *Blockchain) CreateBlock(nonce int, previousHash [32]byte) *Block {
 	b := NewBlock(nonce, previousHash, bc.transactionPool)
 	bc.chain = append(bc.chain, b)
 	bc.transactionPool = []*Transaction{}
 	return b
 }
 
-func (bc *BlockChain) LastBlock() *Block {
+func (bc *Blockchain) LastBlock() *Block {
 	return bc.chain[len(bc.chain)-1]
 }
 
-func (bc *BlockChain) Print() {
+func (bc *Blockchain) Print() {
 	for i, block := range bc.chain {
 		fmt.Printf("%s Chain %d %s\n", strings.Repeat("=", 24), i, strings.Repeat("=", 24))
 		block.Print()
@@ -88,7 +88,7 @@ func (bc *BlockChain) Print() {
 	fmt.Printf("%s\n", strings.Repeat("*", 24))
 }
 
-func (bc *BlockChain) AddTransaction(sender, recipient string, value float32) {
+func (bc *Blockchain) AddTransaction(sender, recipient string, value float32) {
 	t := NewTransaction(sender, recipient, value)
 	bc.transactionPool = append(bc.transactionPool, t)
 }
@@ -127,17 +127,17 @@ func (t *Transaction) MarshalJSON() ([]byte, error) {
 }
 
 func main() {
-	blockChain := NewBlockChain()
-	blockChain.Print()
+	blockchain := NewBlockchain()
+	blockchain.Print()
 
-	blockChain.AddTransaction("A", "B", 1.0)
-	previousHash := blockChain.LastBlock().Hash()
-	blockChain.CreateBlock(5, previousHash)
-	blockChain.Print()
+	blockchain.AddTransaction("A", "B", 1.0)
+	previousHash := blockchain.LastBlock().Hash()
+	blockchain.CreateBlock(5, previousHash)
+	blockchain.Print()
 
-	blockChain.AddTransaction("C", "D", 2.0)
-	blockChain.AddTransaction("X", "Y", 3.0)
-	previousHash = blockChain.LastBlock().Hash()
-	blockChain.CreateBlock(2, previousHash)
-	blockChain.Print()
+	blockchain.AddTransaction("C", "D", 2.0)
+	blockchain.AddTransaction("X", "Y", 3.0)
+	previousHash = blockchain.LastBlock().Hash()
+	blockchain.CreateBlock(2, previousHash)
+	blockchain.Print()
 }
