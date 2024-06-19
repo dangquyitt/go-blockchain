@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const MINING_DIFFICULTLY = 3
+
 func init() {
 	log.SetPrefix("Blockchain: ")
 }
@@ -93,6 +95,36 @@ func (bc *Blockchain) AddTransaction(sender, recipient string, value float32) {
 	bc.transactionPool = append(bc.transactionPool, t)
 }
 
+func (bc *Blockchain) CopyTransactionPool() []*Transaction {
+	transactions := make([]*Transaction, len(bc.transactionPool))
+	for i, t := range bc.transactionPool {
+		transactions[i] = NewTransaction(t.senderBlockchainAddress, t.recipientBlockchainAddress, t.value)
+	}
+	return transactions
+}
+
+func (bc *Blockchain) ValidProof(nonce int, previousHash [32]byte, transactions []*Transaction, difficutly int) bool {
+	zeros := strings.Repeat("0", difficutly)
+	guessBlock := Block{
+		nonce:        nonce,
+		previousHash: previousHash,
+		timestamp:    0,
+		transactions: transactions,
+	}
+	guessHashStr := fmt.Sprintf("%x", guessBlock.Hash())
+	return guessHashStr[:difficutly] == zeros
+}
+
+func (bc *Blockchain) ProofOfWork() int {
+	transactions := bc.CopyTransactionPool()
+	previousHash := bc.LastBlock().Hash()
+	nonce := 0
+	for !bc.ValidProof(nonce, previousHash, transactions, MINING_DIFFICULTLY) {
+		nonce += 1
+	}
+	return nonce
+}
+
 type Transaction struct {
 	senderBlockchainAddress    string
 	recipientBlockchainAddress string
@@ -111,7 +143,7 @@ func (t *Transaction) Print() {
 	fmt.Printf("%s\n", strings.Repeat("-", 48))
 	fmt.Printf("	sender_blockchain_address: %s\n", t.senderBlockchainAddress)
 	fmt.Printf("	recipient_blockchain_address: %s\n", t.recipientBlockchainAddress)
-	fmt.Printf("	valie: %.1f\n", t.value)
+	fmt.Printf("	value: %.1f\n", t.value)
 }
 
 func (t *Transaction) MarshalJSON() ([]byte, error) {
@@ -132,12 +164,14 @@ func main() {
 
 	blockchain.AddTransaction("A", "B", 1.0)
 	previousHash := blockchain.LastBlock().Hash()
-	blockchain.CreateBlock(5, previousHash)
+	nonce := blockchain.ProofOfWork()
+	blockchain.CreateBlock(nonce, previousHash)
 	blockchain.Print()
 
 	blockchain.AddTransaction("C", "D", 2.0)
 	blockchain.AddTransaction("X", "Y", 3.0)
 	previousHash = blockchain.LastBlock().Hash()
-	blockchain.CreateBlock(2, previousHash)
+	nonce = blockchain.ProofOfWork()
+	blockchain.CreateBlock(nonce, previousHash)
 	blockchain.Print()
 }
